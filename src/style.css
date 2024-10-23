@@ -13,6 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+#appCanvas {
+  border: 1px solid black; 
+  border-radius: 8px; 
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); 
+}
+
 a {
   font-weight: 500;
   color: #646cff;
