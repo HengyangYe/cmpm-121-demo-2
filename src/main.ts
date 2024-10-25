@@ -48,16 +48,50 @@ class Line {
   }
 }
 
+// ToolPreview class to handle tool preview logic
+class ToolPreview {
+  private x: number | null = null;
+  private y: number | null = null;
+  private previewSize: number;
+
+  constructor(previewSize: number) {
+    this.previewSize = previewSize;
+  }
+
+  setPosition(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    if (this.x === null || this.y === null) return;
+
+    ctx.save();
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y - this.previewSize); 
+    for (let i = 1; i < 5; i++) { // To make a star
+      const angle = i * (Math.PI * 4 / 5);
+      ctx.lineTo(this.x + this.previewSize * Math.sin(angle), this.y - this.previewSize * Math.cos(angle));
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 let isDrawing = false;
 const lines: Array<Line> = [];
 const redoStack: Array<Line> = [];
 let currentLine: Line | null = null;
-let selectedThickness = 1; // Default thickness
+let selectedThickness = 1; // Default thickness for Thin marker
+let toolPreview: ToolPreview | null = new ToolPreview(6); // Default preview size for Thin
 
-// Draws the currently saved lines
+// Draws the currently saved lines and tool preview
 function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   lines.forEach((line) => line.display(ctx));
+  if (!isDrawing && toolPreview) toolPreview.draw(ctx); // Draw preview only if not drawing
 }
 
 // Event for drawing-changed
@@ -74,23 +108,34 @@ canvas.addEventListener("mousedown", (event) => {
   currentLine = new Line(startX, startY, selectedThickness); // Use selected thickness
   lines.push(currentLine);
   redoStack.length = 0; // Empty the redo stack because of the new drawing contents
+  toolPreview = null; // Hide preview when drawing
 });
 
 // On mouse move, call drag to extend the line
 canvas.addEventListener("mousemove", (event) => {
-  if (!isDrawing || !currentLine) return;
   const rect = canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
-  currentLine.drag(x, y);
-  
-  // Event for drawing-changed
-  const eventChanged = new Event("drawing-changed");
-  canvas.dispatchEvent(eventChanged);
+
+  if (isDrawing && currentLine) {
+    currentLine.drag(x, y);
+    const eventChanged = new Event("drawing-changed");
+    canvas.dispatchEvent(eventChanged);
+  } else {
+    if (!toolPreview) toolPreview = new ToolPreview(6); // Default preview size if null
+    toolPreview.setPosition(x, y);
+    const toolMovedEvent = new Event("tool-moved");
+    canvas.dispatchEvent(toolMovedEvent); // Fire tool-moved event
+  }
 });
 
 canvas.addEventListener("mouseup", () => {
   isDrawing = false;
+});
+
+// tool-moved to update the preview
+canvas.addEventListener("tool-moved", () => {
+  redraw();
 });
 
 // Create and add a clear button
@@ -118,12 +163,14 @@ app.appendChild(thickButton);
 // Tool selection 
 thinButton.addEventListener("click", () => {
   selectedThickness = 1;
+  toolPreview = new ToolPreview(6); // Set preview size for Thin
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
 });
 
 thickButton.addEventListener("click", () => {
   selectedThickness = 5;
+  toolPreview = new ToolPreview(12); // Set preview size for Thick
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
 });
