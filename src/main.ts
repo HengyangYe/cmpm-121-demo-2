@@ -18,18 +18,23 @@ canvas.id = "appCanvas";
 app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d")!;
-let isDrawing = false;
-const lines: Array<Array<{ x: number; y: number }>> = [];
-let currentLine: Array<{ x: number; y: number }> = [];
-const redoStack: Array<Array<{ x: number; y: number }>> = [];
 
-// Draws the currently saved line
-function redraw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const line of lines) {
+// Create Line class to handle drawing logic
+class Line {
+  private points: Array<{ x: number; y: number }> = [];
+
+  constructor(startX: number, startY: number) {
+    this.points.push({ x: startX, y: startY });
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
-    for (let i = 0; i < line.length; i++) {
-      const point = line[i];
+    for (let i = 0; i < this.points.length; i++) {
+      const point = this.points[i];
       if (i === 0) {
         ctx.moveTo(point.x, point.y);
       } else {
@@ -40,26 +45,42 @@ function redraw() {
   }
 }
 
-// event for drawing-changed
+let isDrawing = false;
+const lines: Array<Line> = [];
+const redoStack: Array<Line> = [];
+let currentLine: Line | null = null;
+
+// Draws the currently saved lines
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  lines.forEach((line) => line.display(ctx));
+}
+
+// Event for drawing-changed
 canvas.addEventListener("drawing-changed", () => {
   redraw();
 });
 
-canvas.addEventListener("mousedown", () => {
+// On mouse down, create a new Line instance
+canvas.addEventListener("mousedown", (event) => {
   isDrawing = true;
-  currentLine = [];
+  const rect = canvas.getBoundingClientRect();
+  const startX = event.clientX - rect.left;
+  const startY = event.clientY - rect.top;
+  currentLine = new Line(startX, startY);
   lines.push(currentLine);
   redoStack.length = 0; // Empty the redo stack because of the new drawing contents
 });
 
+// On mouse move, call drag to extend the line
 canvas.addEventListener("mousemove", (event) => {
-  if (!isDrawing) return;
+  if (!isDrawing || !currentLine) return;
   const rect = canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
-  currentLine.push({ x, y });
+  currentLine.drag(x, y);
   
-  // event for drawing-changed
+  // Event for drawing-changed
   const eventChanged = new Event("drawing-changed");
   canvas.dispatchEvent(eventChanged);
 });
