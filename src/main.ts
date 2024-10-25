@@ -22,9 +22,11 @@ const ctx = canvas.getContext("2d")!;
 // Create Line class to handle drawing logic
 class Line {
   private points: Array<{ x: number; y: number }> = [];
+  private thickness: number;
 
-  constructor(startX: number, startY: number) {
+  constructor(startX: number, startY: number, thickness: number) {
     this.points.push({ x: startX, y: startY });
+    this.thickness = thickness;
   }
 
   drag(x: number, y: number) {
@@ -33,6 +35,7 @@ class Line {
 
   display(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
+    ctx.lineWidth = this.thickness; // Set line thickness
     for (let i = 0; i < this.points.length; i++) {
       const point = this.points[i];
       if (i === 0) {
@@ -49,6 +52,7 @@ let isDrawing = false;
 const lines: Array<Line> = [];
 const redoStack: Array<Line> = [];
 let currentLine: Line | null = null;
+let selectedThickness = 1; // Default thickness
 
 // Draws the currently saved lines
 function redraw() {
@@ -67,7 +71,7 @@ canvas.addEventListener("mousedown", (event) => {
   const rect = canvas.getBoundingClientRect();
   const startX = event.clientX - rect.left;
   const startY = event.clientY - rect.top;
-  currentLine = new Line(startX, startY);
+  currentLine = new Line(startX, startY, selectedThickness); // Use selected thickness
   lines.push(currentLine);
   redoStack.length = 0; // Empty the redo stack because of the new drawing contents
 });
@@ -100,6 +104,30 @@ clearButton.addEventListener("click", () => {
   canvas.dispatchEvent(eventChanged); // Redrawing the emptied canvas
 });
 
+// Thin/Thick buttons
+const thinButton = document.createElement("button");
+thinButton.textContent = "Thin Marker";
+thinButton.classList.add("selectedTool"); // Initially selected
+
+const thickButton = document.createElement("button");
+thickButton.textContent = "Thick Marker";
+
+app.appendChild(thinButton);
+app.appendChild(thickButton);
+
+// Tool selection 
+thinButton.addEventListener("click", () => {
+  selectedThickness = 1;
+  thinButton.classList.add("selectedTool");
+  thickButton.classList.remove("selectedTool");
+});
+
+thickButton.addEventListener("click", () => {
+  selectedThickness = 5;
+  thickButton.classList.add("selectedTool");
+  thinButton.classList.remove("selectedTool");
+});
+
 // Undo button
 const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
@@ -123,7 +151,7 @@ app.appendChild(redoButton);
 
 redoButton.addEventListener("click", () => {
   if (redoStack.length > 0) {
-    const redoneLine = redoStack.pop(); // Take out the most recently undone line
+    const redoneLine = redoStack.pop(); // pop out the most recently undone line
     if (redoneLine) {
       lines.push(redoneLine); // Re-add to display list
     }
@@ -140,3 +168,5 @@ app.appendChild(buttonContainer);
 buttonContainer.appendChild(clearButton);
 buttonContainer.appendChild(undoButton);
 buttonContainer.appendChild(redoButton);
+buttonContainer.appendChild(thinButton);
+buttonContainer.appendChild(thickButton);
