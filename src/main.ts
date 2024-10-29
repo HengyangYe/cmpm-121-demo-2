@@ -113,6 +113,9 @@ let selectedThickness = 1; // Default thickness for Thin marker
 let toolPreview: ToolPreview | null = new ToolPreview(6); // Default preview size for Thin
 let currentSticker: StickerCommand | null = null; // Active sticker preview
 
+// Initial sticker set
+const stickerSet = ["🤡", "🤣", "😍"];
+
 // Draws the currently saved lines and tool preview
 function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -180,17 +183,37 @@ canvas.addEventListener("tool-moved", () => {
   redraw();
 });
 
-// Sticker buttons for 🤡, 🤣, 😍
-["🤡", "🤣", "😍"].forEach((emoji) => {
-  const stickerButton = document.createElement("button");
-  stickerButton.textContent = emoji;
-  stickerButton.addEventListener("click", () => {
-    currentSticker = new StickerCommand(emoji);
-    const toolMovedEvent = new Event("tool-moved");
-    canvas.dispatchEvent(toolMovedEvent);
+// Create sticker buttons dynamically based on stickerSet
+function createStickerButtons() {
+  document.querySelectorAll(".sticker-btn").forEach(btn => btn.remove());
+
+  stickerSet.forEach((emoji) => {
+    const stickerButton = document.createElement("button");
+    stickerButton.classList.add("sticker-btn");
+    stickerButton.textContent = emoji;
+    stickerButton.addEventListener("click", () => {
+      currentSticker = new StickerCommand(emoji);
+      const toolMovedEvent = new Event("tool-moved");
+      canvas.dispatchEvent(toolMovedEvent);
+    });
+    app.appendChild(stickerButton);
   });
-  app.appendChild(stickerButton);
+}
+
+// Add custom sticker button
+const customStickerButton = document.createElement("button");
+customStickerButton.textContent = "Add Custom Sticker";
+customStickerButton.addEventListener("click", () => {
+  const text = prompt("Custom sticker text", "🧽");
+  if (text) {
+    stickerSet.push(text); // Add custom sticker to stickerSet
+    createStickerButtons(); // Refresh sticker buttons
+  }
 });
+app.appendChild(customStickerButton);
+
+// Initial creation of sticker buttons
+createStickerButtons();
 
 // Create and add a clear button
 const clearButton = document.createElement("button");
@@ -253,7 +276,7 @@ app.appendChild(redoButton);
 
 redoButton.addEventListener("click", () => {
   if (redoStack.length > 0) {
-    const redoneLine = redoStack.pop(); // pop out the most recently undone line
+    const redoneLine = redoStack.pop(); // Pop the most recently undone line
     if (redoneLine) {
       lines.push(redoneLine); // Re-add to display list
     }
@@ -262,7 +285,7 @@ redoButton.addEventListener("click", () => {
   }
 });
 
-// Format to look nice
+// Format buttons and container
 const buttonContainer = document.createElement("div");
 buttonContainer.classList.add("button-container");
 app.appendChild(buttonContainer);
