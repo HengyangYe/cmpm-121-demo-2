@@ -285,6 +285,37 @@ redoButton.addEventListener("click", () => {
   }
 });
 
+// Export button
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+exportButton.addEventListener("click", () => {
+  // Create and size a temporary canvas
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportCtx = exportCanvas.getContext("2d");
+
+  if (exportCtx) {
+    // Scaling context
+    exportCtx.scale(4, 4);
+
+    // Draw the contents of the current display list onto a new canvas 
+    lines.forEach((item) => {
+      if (item.type === "line") {
+        (item.item as Line).display(exportCtx);
+      } else if (item.type === "sticker") {
+        (item.item as StickerCommand).draw(exportCtx);
+      }
+    });
+
+    // Triggier download 
+    const anchor = document.createElement("a");
+    anchor.href = exportCanvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();
+  }
+});
+
 // Format buttons and container
 const buttonContainer = document.createElement("div");
 buttonContainer.classList.add("button-container");
@@ -295,3 +326,4 @@ buttonContainer.appendChild(undoButton);
 buttonContainer.appendChild(redoButton);
 buttonContainer.appendChild(thinButton);
 buttonContainer.appendChild(thickButton);
+app.appendChild(exportButton);
