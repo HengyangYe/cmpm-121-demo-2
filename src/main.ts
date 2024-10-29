@@ -200,7 +200,7 @@ function createStickerButtons() {
   });
 }
 
-// Add custom sticker button
+// Add custom sticker button to the button container
 const customStickerButton = document.createElement("button");
 customStickerButton.textContent = "Add Custom Sticker";
 customStickerButton.addEventListener("click", () => {
@@ -210,7 +210,6 @@ customStickerButton.addEventListener("click", () => {
     createStickerButtons(); // Refresh sticker buttons
   }
 });
-app.appendChild(customStickerButton);
 
 // Initial creation of sticker buttons
 createStickerButtons();
@@ -326,4 +325,5 @@ buttonContainer.appendChild(undoButton);
 buttonContainer.appendChild(redoButton);
 buttonContainer.appendChild(thinButton);
 buttonContainer.appendChild(thickButton);
+buttonContainer.appendChild(customStickerButton);
 app.appendChild(exportButton);
