@@ -19,14 +19,44 @@ app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d")!;
 
+// Add a color picker for marker colors
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.value = "#000000"; // Default to black
+app.appendChild(colorPicker);
+
+let currentColor = colorPicker.value;
+
+// Update currentColor when a new color is selected
+colorPicker.addEventListener("input", (event) => {
+  currentColor = (event.target as HTMLInputElement).value;
+});
+
+// Add a slider to control tool properties
+const toolSlider = document.createElement("input");
+toolSlider.type = "range";
+toolSlider.min = "0";
+toolSlider.max = "360";
+toolSlider.value = "0"; // Default to 0
+app.appendChild(toolSlider);
+
+let sliderValue = parseInt(toolSlider.value, 10);
+
+// Update sliderValue when the slider changes
+toolSlider.addEventListener("input", (event) => {
+  sliderValue = parseInt((event.target as HTMLInputElement).value, 10);
+});
+
 // Create Line class to handle drawing logic
 class Line {
   private points: Array<{ x: number; y: number }> = [];
   private thickness: number;
+  private color: string;
 
-  constructor(startX: number, startY: number, thickness: number) {
+  constructor(startX: number, startY: number, thickness: number, color: string) {
     this.points.push({ x: startX, y: startY });
     this.thickness = thickness;
+    this.color = color;
   }
 
   drag(x: number, y: number) {
@@ -36,6 +66,7 @@ class Line {
   display(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.lineWidth = this.thickness; // Set line thickness
+    ctx.strokeStyle = this.color; // Set line color
     for (let i = 0; i < this.points.length; i++) {
       const point = this.points[i];
       if (i === 0) {
@@ -67,12 +98,15 @@ class ToolPreview {
     if (this.x === null || this.y === null) return;
 
     ctx.save();
-    ctx.fillStyle = "red";
+    ctx.fillStyle = `hsl(${sliderValue}, 100%, 50%)`; // Use hue from slider for preview
     ctx.beginPath();
-    ctx.moveTo(this.x, this.y - this.previewSize); 
-    for (let i = 1; i < 5; i++) { // To make a star
+    ctx.moveTo(this.x, this.y - this.previewSize);
+    for (let i = 1; i < 5; i++) {
       const angle = i * (Math.PI * 4 / 5);
-      ctx.lineTo(this.x + this.previewSize * Math.sin(angle), this.y - this.previewSize * Math.cos(angle));
+      ctx.lineTo(
+        this.x + this.previewSize * Math.sin(angle),
+        this.y - this.previewSize * Math.cos(angle)
+      );
     }
     ctx.closePath();
     ctx.fill();
@@ -85,6 +119,7 @@ class StickerCommand {
   private x: number | null = null;
   private y: number | null = null;
   private emoji: string;
+  private rotation: number = 0;
 
   constructor(emoji: string) {
     this.emoji = emoji;
@@ -93,14 +128,17 @@ class StickerCommand {
   setPosition(x: number, y: number) {
     this.x = x;
     this.y = y;
+    this.rotation = sliderValue; // Use slider value for rotation
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     if (this.x === null || this.y === null) return;
 
     ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180); // Apply rotation
     ctx.font = "24px Arial";
-    ctx.fillText(this.emoji, this.x, this.y); // Draw emoji
+    ctx.fillText(this.emoji, 0, 0);
     ctx.restore();
   }
 }
@@ -140,15 +178,15 @@ canvas.addEventListener("mousedown", (event) => {
 
   if (currentSticker) {
     currentSticker.setPosition(startX, startY);
-    lines.push({ type: "sticker", item: currentSticker }); // Add to lines stack
-    currentSticker = null; // Clear sticker preview
-    redraw(); // Re-draw to display fixed sticker
+    lines.push({ type: "sticker", item: currentSticker });
+    currentSticker = null;
+    redraw();
   } else {
     isDrawing = true;
-    currentLine = new Line(startX, startY, selectedThickness); // Use selected thickness;
-    lines.push({ type: "line", item: currentLine }); // Add to lines stack
-    redoStack.length = 0; // Clear redo stack on new line
-    toolPreview = null; // Hide preview when drawing
+    currentLine = new Line(startX, startY, selectedThickness, currentColor);
+    lines.push({ type: "line", item: currentLine });
+    redoStack.length = 0;
+    toolPreview = null;
   }
 });
 
