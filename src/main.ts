@@ -221,6 +221,14 @@ canvas.addEventListener("tool-moved", () => {
   redraw();
 });
 
+// Instruction panel
+const instructions = document.createElement("p");
+instructions.textContent = "Use the Thin/Thick markers to draw, add stickers, or export your masterpiece!";
+instructions.style.fontFamily = "Arial, sans-serif";
+instructions.style.margin = "10px";
+app.prepend(instructions);
+
+
 // Create sticker buttons dynamically based on stickerSet
 function createStickerButtons() {
   document.querySelectorAll(".sticker-btn").forEach(btn => btn.remove());
