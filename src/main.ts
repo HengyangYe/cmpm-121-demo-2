@@ -257,12 +257,7 @@ const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
 app.appendChild(clearButton);
 
-clearButton.addEventListener("click", () => {
-  lines.length = 0; // clear
-  redoStack.length = 0; // clear redo lines
-  const eventChanged = new Event("drawing-changed");
-  canvas.dispatchEvent(eventChanged); // Redrawing the emptied canvas
-});
+clearButton.addEventListener("click", handleClear);
 
 // Thin/Thick buttons
 const thinButton = document.createElement("button");
@@ -295,32 +290,14 @@ const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
 app.appendChild(undoButton);
 
-undoButton.addEventListener("click", () => {
-  if (lines.length > 0) {
-    const undoneLine = lines.pop(); // Undo Recent Lines
-    if (undoneLine) {
-      redoStack.push(undoneLine); // Save to Redo Stack
-    }
-    const eventChanged = new Event("drawing-changed");
-    canvas.dispatchEvent(eventChanged);
-  }
-});
+undoButton.addEventListener("click", handleUndo);
 
 // Redo button
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
 app.appendChild(redoButton);
 
-redoButton.addEventListener("click", () => {
-  if (redoStack.length > 0) {
-    const redoneLine = redoStack.pop(); // Pop the most recently undone line
-    if (redoneLine) {
-      lines.push(redoneLine); // Re-add to display list
-    }
-    const eventChanged = new Event("drawing-changed");
-    canvas.dispatchEvent(eventChanged);
-  }
-});
+redoButton.addEventListener("click", handleRedo);
 
 // Export button
 const exportButton = document.createElement("button");
@@ -352,6 +329,37 @@ exportButton.addEventListener("click", () => {
     anchor.click();
   }
 });
+
+// Event Handlers for Undo, Redo and Clear
+function handleUndo() {
+  if (lines.length > 0) {
+    const undoneLine = lines.pop(); // Undo Recent Lines
+    if (undoneLine) {
+      redoStack.push(undoneLine); // Save to Redo Stack
+    }
+    const eventChanged = new Event("drawing-changed");
+    canvas.dispatchEvent(eventChanged);
+  }
+}
+
+function handleRedo() {
+  if (redoStack.length > 0) {
+    const redoneLine = redoStack.pop(); // Pop the most recently undone line
+    if (redoneLine) {
+      lines.push(redoneLine); // Re-add to display list
+    }
+    const eventChanged = new Event("drawing-changed");
+    canvas.dispatchEvent(eventChanged);
+  }
+}
+
+function handleClear() {
+  lines.length = 0; // Clear all lines
+  redoStack.length = 0; // Clear redo stack
+  const eventChanged = new Event("drawing-changed");
+  canvas.dispatchEvent(eventChanged);
+}
+
 
 // Format buttons and container
 const buttonContainer = document.createElement("div");
